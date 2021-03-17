@@ -52,28 +52,52 @@ export default class CustomActions extends Component {
 
     }
 
+    // EXAMPLE
     getLocation = async () => {
-        const { status } = await Permissions.askAsync(Permissions.LOCATION);
-
-        if (status === 'granted') {
-            let result = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-
+        try {
+          const { status } = await Permissions.askAsync(Permissions.LOCATION);
+          if (status === "granted") {
+            const result = await Location.getCurrentPositionAsync({}).catch(error =>
+              console.log(error)
+            );
             const longitude = JSON.stringify(result.coords.longitude);
-            const latitude = JSON.stringify(result.coords.latitude);
-
+            const altitude = JSON.stringify(result.coords.latitude);
             if (result) {
-                this.props.onSend({
-                    location: {
-                        longitude,
-                        latitude,
-                    }
-                });
+              this.props.onSend({
+                location: {
+                  longitude: result.coords.longitude,
+                  latitude: result.coords.latitude
+                },
+              });
             }
-
-        } else {
-            window.alert('Location Access Denied');
+          }
+        } catch (error) {
+          console.log(error.message);
         }
-    }
+      };
+
+    // getLocation = async () => {
+    //     const { status } = await Permissions.askAsync(Permissions.LOCATION);
+
+    //     if (status === 'granted') {
+    //         let result = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+
+    //         const longitude = JSON.stringify(result.coords.longitude);
+    //         const latitude = JSON.stringify(result.coords.latitude);
+
+    //         if (result) {
+    //             this.props.onSend({
+    //                 location: {
+    //                     longitude,
+    //                     latitude,
+    //                 }
+    //             });
+    //         }
+
+    //     } else {
+    //         window.alert('Location Access Denied');
+    //     }
+    // }
 
     uploadImageFetch = async (uri) => {
         const blob = await new Promise((resolve, reject) => {
