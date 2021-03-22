@@ -1,3 +1,7 @@
+/**
+ * @description chat screen; user writes/sends messages, images, location
+ */
+
 /* eslint-disable no-alert */
 /* eslint-disable no-console */
 /* eslint-disable no-underscore-dangle */
@@ -29,6 +33,10 @@ export default class Chat extends Component {
       },
       isConnected: false,
     };
+
+    /**
+     * initialize firebase
+     */
     if (!firebase.apps.length) {
       firebase.initializeApp({
         apiKey: 'AIzaSyBZ6eS7PHX10wtY3BjOIFAgxQr_V8pn9-w',
@@ -103,6 +111,10 @@ export default class Chat extends Component {
     }
   }
 
+  /**
+   * saves messages to AsyncStorage for offline access
+   * @async
+   */
   async saveMessages() {
     try {
       await AsyncStorage.setItem('messages', JSON.stringify(this.state.messages));
@@ -111,133 +123,170 @@ export default class Chat extends Component {
     }
   }
 
+  /**
+   * deletes all messages from AsyncStorage
+   * @async
+   */
   async deleteMessages() {
     try {
       await AsyncStorage.removeItem('messages');
       this.setState({
         messages: [],
-      })
+      });
     } catch (error) {
       console.log(error.message);
     }
   }
 
+  /**
+   * on Chat component unmounting, unsubscribe from user's sign in and firebase collections
+   */
   componentWillUnmount() {
     this.unsubscribe();
     this.authUnsubscribe();
   }
 
-    onCollectionUpdate = (querySnapshot) => {
-      const messages = [];
-      querySnapshot.forEach((doc) => {
-        var data = doc.data();
-        messages.push({
-          _id: data._id,
-          text: data.text,
-          createdAt: data.createdAt.toDate(),
-          user: {
-            _id: data.user._id,
-            name: data.user.name,
-            avatar: data.user.avatar,
-          },
-          image: data.image || null,
-          location: data.location || null,
-        });
+  /**
+   * on firebase collection update, sets messages state
+   * @param {*} querySnapshot 
+   */
+  onCollectionUpdate = (querySnapshot) => {
+    const messages = [];
+    querySnapshot.forEach((doc) => {
+      var data = doc.data();
+      messages.push({
+        _id: data._id,
+        text: data.text,
+        createdAt: data.createdAt.toDate(),
+        user: {
+          _id: data.user._id,
+          name: data.user.name,
+          avatar: data.user.avatar,
+        },
+        image: data.image || null,
+        location: data.location || null,
       });
-      this.setState({
-        messages,
-      });
-    }
+    });
+    this.setState({
+      messages,
+    });
+  }
 
-    onSend(messages = []) {
-      this.setState(previousState => ({
-        messages: GiftedChat.append(previousState.messages, messages),
-      }),
-      () => {
-        this.addMessage();
-        this.saveMessages();
-      });
-    }
+  /**
+   * on sending new message, appends to messages state
+   * @param {*} messages
+   */
+  onSend(messages = []) {
+    this.setState(previousState => ({
+      messages: GiftedChat.append(previousState.messages, messages),
+    }),
+    () => {
+      this.addMessage();
+      this.saveMessages();
+    });
+  }
 
-    addMessage() {
-      const message = this.state.messages[0];
-      this.referenceChatMessages.add({
-        _id: message._id,
-        text: message.text || '',
-        createdAt: message.createdAt,
-        user: message.user,
-        image: message.image || null,
-        location: message.location || null,
-      });
-      console.log('Message added to firestore');
-    }
+  /**
+   * adds message state to firebase
+   */
+  addMessage() {
+    const message = this.state.messages[0];
+    this.referenceChatMessages.add({
+      _id: message._id,
+      text: message.text || '',
+      createdAt: message.createdAt,
+      user: message.user,
+      image: message.image || null,
+      location: message.location || null,
+    });
+    console.log('Message added to firestore');
+  }
 
-    renderBubble(props) {
-      return (
-            <Bubble
-                {...props}
-                wrapperStyle={{
-                  right: {
-                    backgroundColor: 'darkgray',
-                  },
-                }}
-            />
-      )
-    }
-
-    renderInputToolbar(props) {
-      if (this.state.isConnected == false) {
-      } else {
-        return (
-                <InputToolbar {...props} />
-        );
-      }
-    }
-
-    renderCustomActions = (props) => {
-      return <CustomActions {...props} />;
-    };
-    
-    // EXAMPLE
-    renderCustomView(props) {
-      const { currentMessage } = props;
-      if (currentMessage.location) {
-        return (
-            <MapView
-              style={{ width: 150, height: 100, borderRadius: 13, margin: 3 }}
-              region={{
-                latitude: currentMessage.location.latitude,
-                longitude: currentMessage.location.longitude,
-                latitudeDelta: 0.0922,
-                longitudeDelta: 0.0421,
+  /**
+   * renders chat bubble
+   * @param {*} props from GiftedChat
+   * @returns Bubble
+   */
+  renderBubble(props) {
+    return (
+          <Bubble
+              {...props}
+              wrapperStyle={{
+                right: {
+                  backgroundColor: 'darkgray',
+                },
               }}
-            />
-        );
-      }
-      return null;
-    }
+          />
+    )
+  }
 
-    render() {
-      let color = this.props.route.params.color;
-
+  /**
+   * prevents render of toolbar if offline
+   * @param {*} props from GiftedChat
+   * @returns InputToolbar component
+   */
+  renderInputToolbar(props) {
+    if (this.state.isConnected == false) {
+    } else {
       return (
-            <View style={{ flex: 1, backgroundColor: color }}>
-
-                <GiftedChat
-                    renderBubble={this.renderBubble.bind(this)}
-                    renderInputToolbar={this.renderInputToolbar.bind(this)}
-                    renderActions={this.renderCustomActions}
-                    renderCustomView={this.renderCustomView}
-                    messages={this.state.messages}
-                    onSend={messages => this.onSend(messages)}
-                    user={this.state.user}
-                />
-
-                { Platform.OS === 'android' ? <KeyboardAvoidingView behavior='height' /> : null}
-
-            </View>
-      )
+              <InputToolbar {...props} />
+      );
     }
+  }
+
+  /**
+   * shows user extra options
+   * @param {*} props from GiftedChat
+   * @returns CustomerActions component
+   */
+  renderCustomActions = (props) => {
+    return <CustomActions {...props} />;
+  };
+
+  /**
+   * renders view of map of user's location
+   * @param {*} props from GiftedChat/MapView
+   * @returns MapView component
+   */
+  renderCustomView(props) {
+    const { currentMessage } = props;
+    if (currentMessage.location) {
+      return (
+          <MapView
+            style={{ width: 150, height: 100, borderRadius: 13, margin: 3 }}
+            region={{
+              latitude: currentMessage.location.latitude,
+              longitude: currentMessage.location.longitude,
+              latitudeDelta: 0.0922,
+              longitudeDelta: 0.0421,
+            }}
+          />
+      );
+    }
+    return null;
+  }
+
+  render() {
+    let color = this.props.route.params.color;
+
+    return (
+          <View style={{ flex: 1, backgroundColor: color }}>
+
+              <GiftedChat
+                  renderBubble={this.renderBubble.bind(this)}
+                  renderInputToolbar={this.renderInputToolbar.bind(this)}
+                  renderActions={this.renderCustomActions}
+                  renderCustomView={this.renderCustomView}
+                  messages={this.state.messages}
+                  onSend={messages => this.onSend(messages)}
+                  user={this.state.user}
+              />
+
+              { Platform.OS === 'android' ? <KeyboardAvoidingView behavior='height' /> : null}
+
+          </View>
+    )
+  }
 }
 
 

@@ -1,3 +1,9 @@
+/* eslint-disable linebreak-style */
+
+/**
+ * @description start screen; user enters name, chooses chat background
+ */
+
 import React from 'react';
 import { View, Text, TextInput, Button, ImageBackground, StyleSheet, TouchableOpacity } from 'react-native';
 
@@ -17,6 +23,8 @@ export default class Start extends React.Component {
 
         <View style={{flex:1, justifyContent: 'center', alignItems: 'center'}}>
           <Text>App Name</Text>
+
+          {/* user enters name */}
           <View>
             <TextInput
               onChangeText={(name) => this.setState({ name })}
@@ -33,6 +41,7 @@ export default class Start extends React.Component {
               }}
             />
             
+            {/* user chooses chat background */}
             <Text style={styles.text}> Choose a color for your Chat: </Text>
             <View style={styles.container}>
                 <TouchableOpacity
