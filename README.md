@@ -1,7 +1,5 @@
 # ChatApp
-
-## built with
-Expo, Firebase, React Native
+Built with Expo, Firebase, React Native
 
 # Description
 Users can sign in to a chat room, and send message, pictures, and location.
